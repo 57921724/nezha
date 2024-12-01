@@ -211,27 +211,6 @@ select_version() {
     fi
 }
 
-update_script() {
-    echo "> 更新脚本"
-
-    #curl -sL https://${GITHUB_RAW_URL}/script/install.sh -o /tmp/nezha.sh
-    #new_version=$(grep "NZ_VERSION" /tmp/nezha.sh | head -n 1 | awk -F "=" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    #if [ -z "$new_version" ]; then
-    #    echo "脚本获取失败，请检查本机能否链接 https://${GITHUB_RAW_URL}/script/install.sh"
-    #    return 1
-    #fi
-    #echo "当前最新版本为: ${new_version}"
-    if [ -z "$CN" ]; then
-        curl -sL https://raw.githubusercontent.com/57921724/scripts/main/install.sh -o /tmp/nezha.sh
-    mv -f /tmp/nezha.sh ./nezha.sh && chmod a+x ./nezha.sh
-
-    echo "3s后执行新脚本"
-    sleep 3s
-    clear
-    exec ./nezha.sh
-    exit 0
-}
-
 before_show_menu() {
     echo && info "* 按回车返回主菜单 *" && read temp
     show_menu
