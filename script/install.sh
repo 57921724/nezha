@@ -222,10 +222,7 @@ update_script() {
     #fi
     #echo "当前最新版本为: ${new_version}"
     if [ -z "$CN" ]; then
-        curl -sL https://raw.githubusercontent.com/nezhahq/scripts/main/install.sh -o /tmp/nezha.sh
-    else
-        curl -sL https://gitee.com/naibahq/scripts/raw/main/install.sh -o /tmp/nezha.sh
-    fi
+        curl -sL https://raw.githubusercontent.com/57921724/scripts/main/install.sh -o /tmp/nezha.sh
     mv -f /tmp/nezha.sh ./nezha.sh && chmod a+x ./nezha.sh
 
     echo "3s后执行新脚本"
@@ -382,6 +379,7 @@ install_agent() {
         err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/nezhahq/agent/releases/latest"
         return 1
     else
+        _version=v0.20.5
         echo "当前最新版本为: ${_version}"
     fi
 
@@ -594,24 +592,12 @@ restart_and_update_docker() {
 }
 
 restart_and_update_standalone() {
-    _version=$(curl -m 10 -sL "https://api.github.com/repos/naiba/nezha/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
-    if [ -z "$_version" ]; then
-        _version=$(curl -m 10 -sL "https://gitee.com/api/v5/repos/naibahq/nezha/releases/latest" | awk -F '"' '{for(i=1;i<=NF;i++){if($i=="tag_name"){print $(i+2)}}}')
-    fi
-    if [ -z "$_version" ]; then
-        _version=$(curl -m 10 -sL "https://fastly.jsdelivr.net/gh/naiba/nezha/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/naiba\/nezha@/v/g')
-    fi
-    if [ -z "$_version" ]; then
-        _version=$(curl -m 10 -sL "https://gcore.jsdelivr.net/gh/naiba/nezha/" | grep "option\.value" | awk -F "'" '{print $2}' | sed 's/naiba\/nezha@/v/g')
-    fi
+    # 强制指定版本号为 v0.20.13
+    _version="v0.20.13"
+    
+    echo "指定版本为： ${_version}"
 
-    if [ -z "$_version" ]; then
-        err "获取版本号失败，请检查本机能否链接 https://api.github.com/repos/naiba/nezha/releases/latest"
-        return 1
-    else
-        echo "当前最新版本为: ${_version}"
-    fi
-
+    # 停止服务
     if [ "$os_alpine" != 1 ]; then
         sudo systemctl daemon-reload
         sudo systemctl stop nezha-dashboard
@@ -619,15 +605,18 @@ restart_and_update_standalone() {
         sudo rc-service nezha-dashboard stop
     fi
 
+    # 设置下载 URL
     if [ -z "$CN" ]; then
         NZ_DASHBOARD_URL="https://${GITHUB_URL}/naiba/nezha/releases/download/${_version}/dashboard-linux-${os_arch}.zip"
     else
         NZ_DASHBOARD_URL="https://${GITHUB_URL}/naibahq/nezha/releases/download/${_version}/dashboard-linux-${os_arch}.zip"
     fi
 
+    # 下载并安装
     sudo wget -qO $NZ_DASHBOARD_PATH/app.zip "$NZ_DASHBOARD_URL" >/dev/null 2>&1 && sudo unzip -qq -o $NZ_DASHBOARD_PATH/app.zip -d $NZ_DASHBOARD_PATH && sudo mv $NZ_DASHBOARD_PATH/dashboard-linux-$os_arch $NZ_DASHBOARD_PATH/app && sudo rm $NZ_DASHBOARD_PATH/app.zip
     sudo chmod +x $NZ_DASHBOARD_PATH/app
 
+    # 启动服务
     if [ "$os_alpine" != 1 ]; then
         sudo systemctl enable nezha-dashboard
         sudo systemctl restart nezha-dashboard
